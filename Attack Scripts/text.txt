@@ -1,0 +1,8 @@
+# Dependency File for tynnel.py
+Passwords:
+
+email: someone@mail.com
+pass: 1234pass
+
+bank number: 11111111111
+pass: strongpass1234
