@@ -72,6 +72,7 @@ Det er følgende filer der skal indsættes: (Filerne findes her i mappen "Active
 
 
 ## Attack Scripts
+⚠️ Disclaimer: These scripts have been created to generate activity for testing the detection of potential malicious activity. It is not permitted to use these scripts for any other purposes or on machines without authorization
 
 ⚠️ Disclaimer: Disse scripts er oprettet til at genere aktivitet for at teste detektering af mulig malicious aktivitet, det er ikke tilladt at benytte scriptsne til andre formål eller på maskiner uden tilladelse. 
 
