@@ -1,0 +1,150 @@
+<!-- Local rules -->
+
+<!-- Modify it at your will. -->
+<!-- Copyright (C) 2015, Wazuh Inc. -->
+
+<!-- Example -->
+<group name="local,syslog,sshd,">
+
+  <!--
+  Dec 10 01:02:02 host sshd[1234]: Failed none for root from 1.1.1.1 port 1066 ssh2
+  -->
+  <rule id="100001" level="5">
+    <if_sid>5716</if_sid>
+    <srcip>1.1.1.1</srcip>
+    <description>sshd: authentication failed from IP 1.1.1.1.</description>
+    <group>authentication_failed,pci_dss_10.2.4,pci_dss_10.2.5,</group>
+  </rule>
+
+</group>
+
+
+<!-- Virus Total regler -->
+<group name="virustotal,">
+  <rule id="100092" level="12">
+    <if_sid>657</if_sid>
+    <match>Successfully removed threat</match>
+    <description>$(parameters.program) removed threat located at $(parameters.alert.data.virustotal.source.file)</description>
+  </rule>
+
+  <rule id="100093" level="12">
+    <if_sid>657</if_sid>
+    <match>Error removing threat</match>
+    <description>Error removing threat located at $(parameters.alert.data.virustotal.source.file)</description>
+  </rule>
+</group>
+
+
+<!-- Brute-Force regel, denne trigger når active response har blokkeret en ip -->
+<group name="Brute-Force Attempt,">
+  <rule id="100200" level="12">
+    <if_sid>657</if_sid>
+    <match>active-response/bin/netsh.exe: {"version":1,"origin":{"name":"node01","module":"wazuh-execd"},"command":"add"</match>
+    <description>Active Response succeeded: Block rule added for RDP or SSH attack.</description>
+  </rule>
+
+  <!-- Brute-Force regel, denne trigger når active response har fjernet blokkering en ip -->
+  <rule id="100201" level="12">
+    <if_sid>657</if_sid>
+    <match>active-response/bin/netsh.exe: {"version":1,"origin":{"name":"node01","module":"wazuh-execd"},"command":"delete"</match>
+    <description>Active Response succeeded: Block rule deleted for RDP or SSH attack.</description>
+  </rule>
+</group>
+
+
+<!-- Regel for Powershell monitorering -->
+<group name="windows,powershell,">
+  <rule id="100202" level="11">
+    <if_sid>60009</if_sid>
+    <field name="win.eventdata.payload" type="pcre2">(?i)CommandInvocation</field>
+    <field name="win.system.message" type="pcre2">(?i)EncodedCommand|FromBase64String|EncodedArguments|-e\b|-enco\b|-en\b</field>
+    <description>Encoded command executed via PowerShell.</description>
+    <mitre>
+      <id>T1059.001</id>
+      <id>T1562.001</id>
+    </mitre>
+  </rule>
+  
+  <rule id="100203" level="6">
+    <if_sid>60009</if_sid>
+    <field name="win.system.message" type="pcre2">(?i)blocked by your antivirus software</field>
+    <description>Windows Security blocked malicious command executed via PowerShell.</description>
+    <mitre>
+      <id>T1059.001</id>  
+    </mitre>
+  </rule>
+
+  <rule id="100204" level="12">
+    <if_sid>60009</if_sid>
+    <field name="win.eventdata.payload" type="pcre2">(?i)CommandInvocation</field>    
+    <field name="win.system.message" type="pcre2">(?i)Add-Persistence|Find-AVSignature|Get-GPPAutologon|Get-GPPPassword|Get-HttpStatus|Get-Keystrokes|Get-SecurityPackages|Get-TimedScreenshot|Get-VaultCredential|Get-VolumeShadowCopy|Install-SSP|Invoke-CredentialInjection|Invoke-DllInjection|Invoke-Mimikatz|Invoke-NinjaCopy|Invoke-Portscan|Invoke-ReflectivePEInjection|Invoke-ReverseDnsLookup|Invoke-Shellcode|Invoke-TokenManipulation|Invoke-WmiCommand|Mount-VolumeShadowCopy|New-ElevatedPersistenceOption|New-UserPersistenceOption|New-VolumeShadowCopy|Out-CompressedDll|Out-EncodedCommand|Out-EncryptedScript|Out-Minidump|PowerUp|PowerView|Remove-Comments|Remove-VolumeShadowCopy|Set-CriticalProcess|Set-MasterBootRecord</field>
+    <description>Risky CMDLet executed. Possible malicious activity detected.</description>
+    <mitre>
+      <id>T1059.001</id>  
+    </mitre>
+  </rule>
+  
+  <rule id="100205" level="0">
+    <if_sid>67027</if_sid>
+    <field name="win.eventdata.subjectUserName">DESKTOP-1GT2PPK|bdn-admin</field>
+    <description>Suppress system account detected.</description>
+  </rule>
+
+  <rule id="100206" level="12">
+    <if_sid>67027</if_sid>
+    <field name="win.eventdata.commandLine" type="pcre2">(?i)net(\d)?(.exe)?\s(user|localgroup|group)</field> 
+    <description>Net.exe. Possible malicious activity detected.</description>
+  </rule>
+  
+  <rule id="100207" level="10">
+    <if_sid>91802</if_sid>
+    <field name="win.eventdata.scriptBlockText" type="pcre2">(?i)mshta.*GetObject|mshta.*new ActiveXObject</field>
+    <description>Mshta used to download a file. Possible malicious activity detected.</description>
+    <mitre>
+      <id>T1059.001</id>  
+    </mitre>
+  </rule>
+
+  <rule id="100208" level="10">
+    <if_sid>60009</if_sid>
+    <field name="win.eventdata.contextInfo" type="pcre2">(?i)ExecutionPolicy bypass|exec bypass</field>
+    <description>PowerShell execution policy set to bypass.</description>
+    <mitre>
+      <id>T1059.001</id>
+    </mitre>
+  </rule>
+
+  <rule id="100209" level="10">
+    <if_sid>60009</if_sid>
+    <field name="win.eventdata.contextInfo" type="pcre2">(?i)Invoke-WebRequest|IWR.*-url|IWR.*-InFile</field>
+    <description>Invoke Webrequest executed, possible download cradle detected.</description>
+    <mitre>
+      <id>T1059.001</id>
+    </mitre>
+  </rule>
+</group>
+
+
+<!-- Regel for om Net.exe AR har virket -->
+<group name="netexe response">  
+  <rule id="100210" level="12">
+    <if_sid>650</if_sid>
+    <match>System32\\net.exe</match>
+    <description>Active Response succeeded: Account disabled for net exe.</description>
+  </rule>
+</group>
+
+
+<!-- Regel mulig mimikatz aktivitet -->
+
+<group name="mimi">  
+  <rule id="100211" level="12">
+    <if_sid>60009</if_sid>
+    <field name="win.eventdata.payload" type="pcre2">(?i)CommandInvocation</field>    
+    <field name="win.system.message" type="pcre2">(?i)Mimikatz</field>
+    <description>Possible Mimikatz activity detected.</description>
+    <mitre>
+      <id>T1059.001</id>
+    </mitre>
+  </rule>
+</group>
